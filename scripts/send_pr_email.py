@@ -31,7 +31,7 @@ def main() -> None:
     smtp_port = int(os.environ.get("SMTP_PORT", "465").strip() or "465")
     smtp_user = require_env("SMTP_USER")
     smtp_password = require_env("SMTP_PASSWORD")
-    mail_to = require_env("MAIL_TO")
+    mail_to = os.environ.get("MAIL_TO", "").strip() or smtp_user
 
     subject = f"待确认发布：cowork报告 {args.report_date}"
     text = f"""cowork报告草稿已生成，等待你确认发布。

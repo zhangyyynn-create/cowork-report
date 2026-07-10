@@ -1,0 +1,82 @@
+name: Generate weekly cowork report
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Use fixture content without calling DeepSeek"
+        required: false
+        default: "false"
+      start:
+        description: "Optional start date, YYYY-MM-DD"
+        required: false
+      end:
+        description: "Optional end date, YYYY-MM-DD"
+        required: false
+  schedule:
+    - cron: "30 1 * * 1"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Generate report draft
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          args=()
+          if [ "${{ github.event.inputs.dry_run || 'false' }}" = "true" ]; then
+            args+=(--dry-run)
+          fi
+          if [ -n "${{ github.event.inputs.start || '' }}" ]; then
+            args+=(--start "${{ github.event.inputs.start }}")
+          fi
+          if [ -n "${{ github.event.inputs.end || '' }}" ]; then
+            args+=(--end "${{ github.event.inputs.end }}")
+          fi
+          python scripts/generate_report.py "${args[@]}"
+
+      - name: Check changes
+        id: changes
+        run: |
+          if git diff --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "report_date=$(cat .generated/report_date.txt)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create review pull request
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPORT_DATE: ${{ steps.changes.outputs.report_date }}
+        run: |
+          branch="weekly-report/${REPORT_DATE}-${GITHUB_RUN_ID}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add index.html reports.json reports/
+          git commit -m "Add cowork report ${REPORT_DATE}"
+          git push origin "$branch"
+          gh pr create \
+            --base main \
+            --head "$branch" \
+            --title "待确认发布：cowork报告 ${REPORT_DATE}" \
+            --body-file .generated/pr_body.md
+
+      - name: No changes
+        if: steps.changes.outputs.changed != 'true'
+        run: echo "No report changes generated."

@@ -71,11 +71,15 @@ jobs:
           git add index.html reports.json reports/
           git commit -m "Add cowork report ${REPORT_DATE}"
           git push origin "$branch"
-          gh pr create \
+          pr_url=$(gh pr create \
             --base main \
             --head "$branch" \
             --title "待确认发布：cowork报告 ${REPORT_DATE}" \
-            --body-file .generated/pr_body.md
+            --body-file .generated/pr_body.md)
+          echo "Created PR: ${pr_url}"
+          python scripts/send_pr_email.py \
+            --pr-url "${pr_url}" \
+            --report-date "${REPORT_DATE}"
 
       - name: No changes
         if: steps.changes.outputs.changed != 'true'

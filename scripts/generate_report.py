@@ -252,7 +252,7 @@ def render_report(report: dict) -> str:
 <main class="wrap">
 <section id="read"><h2 class="section-title">本期导读</h2><div class="lead">{p(report.get("lead", []))}</div></section>
 <section id="moves"><h2 class="section-title">产品动向</h2>{''.join(cards)}</section>
-<section id="signals"><h2 class="section-title">关键判断</h2><div class="lead">{signals}</div><div class="footer">来源链接已放在各产品动向卡片中。确认合并本期草稿 PR 后，该页面会发布到 GitHub Pages 并保留在历史列表中。</div></section>
+<section id="signals"><h2 class="section-title">关键判断</h2><div class="lead">{signals}</div></section>
 </main>
 </body>
 </html>
@@ -287,7 +287,6 @@ def render_index(reports: list[dict]) -> str:
 <section class="panel">{latest_html}</section>
 <div class="toolbar"><h2>全部周报</h2><span class="count">{len(reports)} 期</span></div>
 <section class="list">{''.join(rows)}</section>
-<div class="footer">静态站版本：GitHub Pages 托管，查看访问不消耗 n8n。</div>
 </main>
 </body>
 </html>
@@ -309,7 +308,7 @@ def write_outputs(report: dict) -> None:
             "sources": len(report.get("items", [])),
             "type": "自动草稿",
             "summary": report.get("summary", ""),
-        },
+        }
     )
     reports.sort(key=lambda item: item["date"], reverse=True)
     REPORTS_JSON.write_text(json.dumps(reports, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

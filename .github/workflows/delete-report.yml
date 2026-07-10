@@ -1,0 +1,38 @@
+name: Delete cowork report
+
+on:
+  workflow_dispatch:
+    inputs:
+      report_id:
+        description: "Report date/id to delete, e.g. 2026-07-05"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  delete:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Delete report and rebuild index
+        run: python scripts/delete_report.py --report-id "${{ github.event.inputs.report_id }}"
+
+      - name: Commit deletion
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html reports.json reports/
+          git commit -m "Delete cowork report ${{ github.event.inputs.report_id }}"
+          git push

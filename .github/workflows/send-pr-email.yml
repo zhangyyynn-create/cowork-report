@@ -9,6 +9,12 @@ on:
       report_date:
         description: "Report date, YYYY-MM-DD"
         required: true
+      preview_url:
+        description: "Rendered preview URL"
+        required: false
+      report_raw_url:
+        description: "Raw report HTML URL"
+        required: false
 
 jobs:
   send:
@@ -32,4 +38,6 @@ jobs:
         run: |
           python scripts/send_pr_email.py \
             --pr-url "${{ github.event.inputs.pr_url }}" \
-            --report-date "${{ github.event.inputs.report_date }}"
+            --report-date "${{ github.event.inputs.report_date }}" \
+            --preview-url "${{ github.event.inputs.preview_url }}" \
+            --report-raw-url "${{ github.event.inputs.report_raw_url }}"

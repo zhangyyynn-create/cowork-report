@@ -77,9 +77,12 @@ jobs:
             --title "待确认发布：cowork报告 ${REPORT_DATE}" \
             --body-file .generated/pr_body.md)
           echo "Created PR: ${pr_url}"
+          preview_url="https://htmlpreview.github.io/?https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${branch}/reports/${REPORT_DATE}.html"
           python scripts/send_pr_email.py \
             --pr-url "${pr_url}" \
-            --report-date "${REPORT_DATE}"
+            --report-date "${REPORT_DATE}" \
+            --preview-url "${preview_url}" \
+            --report-file "reports/${REPORT_DATE}.html"
 
       - name: No changes
         if: steps.changes.outputs.changed != 'true'

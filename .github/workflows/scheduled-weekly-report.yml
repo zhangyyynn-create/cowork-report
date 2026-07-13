@@ -1,0 +1,25 @@
+name: Scheduled weekly cowork report
+
+on:
+  workflow_dispatch:
+  schedule:
+    # TEMP TEST: Beijing time 2026-07-13 18:05 = UTC 2026-07-13 10:05.
+    # After this scheduled test succeeds, restore Monday 09:30 Beijing time.
+    - cron: "5 10 13 7 *"
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch report generator
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run generate-weekly-report.yml \
+            --ref main \
+            -f dry_run=false \
+            -f force=false

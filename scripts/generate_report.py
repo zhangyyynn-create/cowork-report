@@ -78,10 +78,9 @@ def parse_source_date(value: str) -> dt.date | None:
         return None
 
 
-def fetch_bing_news(query: str, start: dt.date, end: dt.date, limit: int = 20) -> list[dict]:
-    # Ask Bing for the target period, then apply our own strict date gate below.
-    bounded_query = f"{query} after:{start.isoformat()} before:{(end + dt.timedelta(days=1)).isoformat()}"
-    params = urllib.parse.urlencode({"q": bounded_query, "format": "rss", "setlang": "zh-CN"})
+def fetch_bing_news(query: str, start: dt.date, end: dt.date, limit: int = 50) -> list[dict]:
+    # Keep the search broad, then apply our own strict date gate below.
+    params = urllib.parse.urlencode({"q": query, "format": "rss", "setlang": "zh-CN"})
     request = urllib.request.Request(
         f"https://www.bing.com/news/search?{params}",
         headers={"User-Agent": "Mozilla/5.0 cowork-report-bot"},

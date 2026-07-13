@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-07-12",
+    "title": "AI cowork 产品周报｜2026-07-06 至 2026-07-12",
+    "date": "2026-07-12",
+    "path": "reports/2026-07-12.html",
+    "sources": 4,
+    "type": "自动草稿",
+    "summary": "本周 AI cowork 领域聚焦于企业级 Agent 的编排与协作能力升级，Mistral 推出生产级工作流引擎，Anthropic 将编码助手扩展为实时协作画布，Google 则通过 Opal 和 Gemini Enterprise 双线布局企业 AI 平台。"
+  },
+  {
     "id": "2026-07-05",
     "title": "AI cowork 产品周报｜2026-06-29 至 2026-07-05",
     "date": "2026-07-05",

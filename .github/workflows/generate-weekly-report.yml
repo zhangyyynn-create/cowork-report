@@ -18,9 +18,9 @@ on:
         description: "Optional end date, YYYY-MM-DD"
         required: false
   schedule:
-    # TEMP TEST: Beijing time 2026-07-13 17:00 = UTC 2026-07-13 09:00.
+    # TEMP TEST: Beijing time 2026-07-13 17:20 = UTC 2026-07-13 09:20.
     # After this scheduled test succeeds, restore Monday 09:30 Beijing time.
-    - cron: "0 9 13 7 *"
+    - cron: "20 9 13 7 *"
 
 concurrency:
   group: weekly-cowork-report

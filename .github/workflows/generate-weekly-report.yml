@@ -14,7 +14,10 @@ on:
         description: "Optional end date, YYYY-MM-DD"
         required: false
   schedule:
-    - cron: "0 3 * * 1"
+    # Beijing time: Monday 14:00, with two fallback triggers in case GitHub delays or drops the top-of-hour run.
+    - cron: "0 6 * * 1"
+    - cron: "7 6 * * 1"
+    - cron: "17 6 * * 1"
 
 permissions:
   contents: write
@@ -37,14 +40,14 @@ jobs:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           args=()
-          if [ "${{ github.event.inputs.dry_run || 'false' }}" = "true" ]; then
+          if [ "${{ inputs.dry_run || 'false' }}" = "true" ]; then
             args+=(--dry-run)
           fi
-          if [ -n "${{ github.event.inputs.start || '' }}" ]; then
-            args+=(--start "${{ github.event.inputs.start }}")
+          if [ -n "${{ inputs.start || '' }}" ]; then
+            args+=(--start "${{ inputs.start }}")
           fi
-          if [ -n "${{ github.event.inputs.end || '' }}" ]; then
-            args+=(--end "${{ github.event.inputs.end }}")
+          if [ -n "${{ inputs.end || '' }}" ]; then
+            args+=(--end "${{ inputs.end }}")
           fi
           python scripts/generate_report.py "${args[@]}"
 

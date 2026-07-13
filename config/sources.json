@@ -2,7 +2,7 @@
   "timezone": "Asia/Shanghai",
   "schedule_note": "Every Monday 09:30 China time. GitHub Actions cron uses UTC: 01:30 every Monday.",
   "focus": [
-    "AI cowork / buddy / copilot products",
+    "AI cowork / buddy / copilot products, excluding WorkBuddy self-updates unless materially relevant",
     "enterprise AI agents",
     "office workflow agents",
     "coding agents and developer cowork tools",
@@ -12,7 +12,7 @@
   "queries": [
     {
       "name": "AI cowork and enterprise agents",
-      "query": "(AI agent OR AI copilot OR AI assistant OR cowork OR buddy) enterprise workflow product launch"
+      "query": "(AI agent OR AI copilot OR AI assistant OR cowork OR buddy) enterprise workflow product launch -WorkBuddy"
     },
     {
       "name": "office and collaboration agents",

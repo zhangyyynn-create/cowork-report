@@ -1,5 +1,14 @@
 [
   {
+    "id": "2026-07-12",
+    "title": "AI cowork 产品周报｜2026-07-06 至 2026-07-12",
+    "date": "2026-07-12",
+    "path": "reports/2026-07-12.html",
+    "sources": 5,
+    "type": "自动草稿",
+    "summary": "本周 AI cowork 领域出现两大趋势：Anthropic 推出面向科研的 Claude Science 多智能体工作台，Mistral 发布生产级 Workflows 编排引擎，同时 Google 通过 Opal 和 Gemini Enterprise 强化企业 AI 布局。这些动态表明，AI cowork 正从单点工具向多智能体协作平台演进，编排能力和领域深度成为竞争关键。"
+  },
+  {
     "id": "2026-07-05",
     "title": "AI cowork 产品周报｜2026-06-29 至 2026-07-05",
     "date": "2026-07-05",

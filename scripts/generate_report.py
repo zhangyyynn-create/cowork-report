@@ -64,8 +64,24 @@ def period(config: dict, parsed: argparse.Namespace) -> tuple[dt.date, dt.date]:
     return monday - dt.timedelta(days=7), monday - dt.timedelta(days=1)
 
 
-def fetch_bing_news(query: str, limit: int = 8) -> list[dict]:
-    params = urllib.parse.urlencode({"q": query, "format": "rss", "setlang": "zh-CN"})
+def parse_source_date(value: str) -> dt.date | None:
+    value = (value or "").strip()
+    if not value:
+        return None
+    try:
+        return dt.date.fromisoformat(value[:10])
+    except ValueError:
+        pass
+    try:
+        return email.utils.parsedate_to_datetime(value).date()
+    except Exception:
+        return None
+
+
+def fetch_bing_news(query: str, start: dt.date, end: dt.date, limit: int = 20) -> list[dict]:
+    # Ask Bing for the target period, then apply our own strict date gate below.
+    bounded_query = f"{query} after:{start.isoformat()} before:{(end + dt.timedelta(days=1)).isoformat()}"
+    params = urllib.parse.urlencode({"q": bounded_query, "format": "rss", "setlang": "zh-CN"})
     request = urllib.request.Request(
         f"https://www.bing.com/news/search?{params}",
         headers={"User-Agent": "Mozilla/5.0 cowork-report-bot"},
@@ -78,27 +94,30 @@ def fetch_bing_news(query: str, limit: int = 8) -> list[dict]:
         link = (item.findtext("link") or "").strip()
         desc = re.sub(r"<[^>]+>", "", item.findtext("description") or "").strip()
         raw_date = item.findtext("pubDate") or ""
-        published = raw_date
-        if raw_date:
-            try:
-                published = email.utils.parsedate_to_datetime(raw_date).date().isoformat()
-            except Exception:
-                pass
+        published_date = parse_source_date(raw_date)
+        if not published_date or published_date < start or published_date > end:
+            continue
         source = ""
         for child in item:
             if child.tag.lower().endswith("source"):
                 source = (child.text or "").strip()
         if title and link:
-            items.append({"title": title, "url": link, "source": source or urllib.parse.urlparse(link).netloc, "published": published, "summary": desc})
+            items.append({
+                "title": title,
+                "url": link,
+                "source": source or urllib.parse.urlparse(link).netloc,
+                "published": published_date.isoformat(),
+                "summary": desc,
+            })
     return items
 
 
-def collect_sources(config: dict) -> list[dict]:
+def collect_sources(config: dict, start: dt.date, end: dt.date) -> list[dict]:
     seen: set[str] = set()
     sources: list[dict] = []
     for query in config["queries"]:
         try:
-            for item in fetch_bing_news(query["query"]):
+            for item in fetch_bing_news(query["query"], start, end):
                 key = re.sub(r"\W+", "", (item["title"] + item["url"]).lower())
                 if key in seen:
                     continue
@@ -204,7 +223,7 @@ JSON schema:
   "signals": ["关键判断1", "关键判断2", "关键判断3", "关键判断4", "关键判断5"]
 }}
 
-sources:
+sources_already_strictly_filtered_to_period:
 {json.dumps(sources, ensure_ascii=False, indent=2)}
 """.strip()
     payload = {
@@ -335,7 +354,7 @@ def main() -> None:
     parsed = args()
     config = json.loads(CONFIG.read_text(encoding="utf-8"))
     start, end = period(config, parsed)
-    sources = collect_sources(config)
+    sources = collect_sources(config, start, end)
     if not sources and not parsed.dry_run:
         raise RuntimeError("No sources collected. Adjust config/sources.json or run again later.")
     report = call_deepseek(config, sources, start, end, parsed.dry_run)

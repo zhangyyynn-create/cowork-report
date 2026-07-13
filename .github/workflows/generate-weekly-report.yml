@@ -13,16 +13,9 @@ on:
       end:
         description: "Optional end date, YYYY-MM-DD"
         required: false
-  push:
-    branches:
-      - main
-    paths:
-      - ".github/trigger-weekly-report.txt"
   schedule:
-    # Beijing time: Monday 14:00, with two fallback triggers in case GitHub delays or drops the top-of-hour run.
-    - cron: "0 6 * * 1"
-    - cron: "7 6 * * 1"
-    - cron: "17 6 * * 1"
+    # Beijing time: Monday 14:50. GitHub runs cron in UTC.
+    - cron: "50 6 * * 1"
 
 permissions:
   contents: write

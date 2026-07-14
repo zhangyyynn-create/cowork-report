@@ -6,7 +6,7 @@
     "path": "reports/2026-07-12.html",
     "sources": 4,
     "type": "正式发布",
-    "summary": "本周主线是通用对话产品继续向可执行的工作同事演进：OpenAI 强化 ChatGPT Work 的桌面和连接器入口，Anthropic 把 Claude Cowork 推向手机和浏览器，AI cowork 的竞争焦点正在从“能回答”转向“能长期接入上下文并完成任务”。"
+    "summary": "本周最重要的变化是：AI cowork 开始从“会回答的聊天助手”转向“能接入工作上下文、跨端驻留并持续执行任务的工作层”。OpenAI 与 Anthropic 都在争夺默认工作入口，连接器、异步任务和权限治理成为核心分水岭。"
   },
   {
     "id": "2026-07-06",
@@ -15,6 +15,6 @@
     "path": "reports/2026-07-06.html",
     "sources": 3,
     "type": "正式发布",
-    "summary": "本周 AI cowork 的重点落在底层可用性：Anthropic 通过更低成本模型和 Claude Science 展示专业工作台路径，Microsoft 的组织采纳研究则提醒企业 Agent 真正落地取决于培训、治理和流程改造。"
+    "summary": "本周 AI cowork 的重点不在前台入口，而在底层可用性：Anthropic 用低成本 Agent 模型降低长流程执行门槛，用 Claude Science 展示垂直工作台路径；Microsoft 的组织采纳研究则提醒，AI 同事要落地，必须进入真实组织流程。"
   }
 ]

@@ -163,9 +163,9 @@ def fixture_report(sources: list[dict], start: dt.date, end: dt.date) -> dict:
         "period": f"{start.isoformat()} 至 {end.isoformat()}",
         "summary": "本期关注 AI cowork 从助手功能走向真实工作流的产品竞争。",
         "lead": [
-            "æ¬æå³æ³¨ AI cowork / buddy äº§åä»åç¹å©æèµ°åæç»­å·¥ä½æµçååï¼éç¹çå¥å£ãä¸ä¸æãè·¨åºç¨æ§è¡åä¼ä¸æ²»çè½åã",
-            "å¬å¼ä¿¡æ¯ä¼è¢«æ´çä¸ºé¢åè¯»èçäº§åå¨æ¥ï¼åè®²æ¸åçäºä»ä¹ï¼åå¤æ­å®å¯¹ cowork äº§åå½¢æåç«äºæ ¼å±æå³çä»ä¹ã",
-            "æ¥åéç¹æ¾å¨å¤é¨ AI coworkãä¼ä¸ Agentãç å Agent ååå¬åä½ Agent çäº§åååä¸ï¼ä¸æä»»ä½åä¸åé¨åç§äº§åä½ä¸ºä¸»çº¿ã",
+            "本期关注 AI cowork / buddy 产品从单点助手走向持续工作流的变化，重点看入口、上下文、跨应用执行和企业治理能力。",
+            "公开信息会被整理为面向读者的产品周报：先讲清发生了什么，再判断它对 cowork 产品形态和竞争格局意味着什么。",
+            "报告重点放在外部 AI cowork、企业 Agent、研发 Agent 和办公协作 Agent 的产品变化上，不把任何单一内部参照产品作为主线。",
         ],
         "items": items,
         "signals": [
@@ -190,13 +190,14 @@ def call_deepseek(config: dict, sources: list[dict], start: dt.date, end: dt.dat
 观察周期：{start.isoformat()} 至 {end.isoformat()}
 关注范围：AI cowork、buddy、copilot、企业 Agent、办公/研发/金融工作流 Agent；重点关注字节、阿里、钉钉、飞书将要面对的产品竞争，但不要只写这几家公司。
 
-要求：
-1. 不写流程说明，不写下周预告。
-2. 每条产品动向都要有事实、为什么重要、对 cowork/buddy 产品设计的启示、简评。
-3. 简评必须有判断，指出机会、风险或对国内产品的启发。
-4. 只使用给定 sources，不要编造链接。
-5. 选 5-7 条最重要动态；同类新闻可合并成趋势。
-6. 输出严格 JSON，不要 Markdown 代码块。
+???
+1. ???????????????????/??/????/??/????????????????
+2. ???????????????????????? 2-3 ??????????????????????????????
+3. ??????????????????????????????????/?????????????????????
+4. ?????????????????/??/??/????????????????????????????????
+5. ????? sources???????????????????????????????
+6. ? 4-7 ????????????????????????????????????????
+7. ???? JSON??? Markdown ????
 
 JSON schema:
 {{
@@ -212,11 +213,12 @@ JSON schema:
       "date": "YYYY-MM-DD 或 YYYY-MM",
       "source": "媒体或官方来源",
       "url": "原文链接",
-      "fact": "事实概括，120-180字",
-      "analysis_heading": "分析小标题",
-      "analysis": "深入分析，180-260字",
-      "implication": "对 cowork/buddy 的启示，120-200字",
-      "commentary": "简评，180-260字，必须有判断和取舍"
+      "fact": "?????150-220???????????",
+      "detail_sections": [
+        {"heading": "??????1", "body": "80-160????????????"},
+        {"heading": "??????2", "body": "80-160??????????????"}
+      ],
+      "commentary": "???180-280???????????? cowork/buddy ???????"
     }}
   ],
   "signals": ["关键判断1", "关键判断2", "关键判断3", "关键判断4", "关键判断5"]
@@ -252,8 +254,24 @@ def p(values: list[str]) -> str:
 def render_report(report: dict) -> str:
     cards = []
     for item in report.get("items", []):
+        detail_sections = item.get("detail_sections") or item.get("sections") or []
+        section_html = ""
+        if isinstance(detail_sections, list):
+            for section in detail_sections[:3]:
+                if isinstance(section, dict):
+                    heading = section.get("heading") or section.get("title") or "????"
+                    body = section.get("body") or section.get("analysis") or ""
+                elif isinstance(section, (list, tuple)) and len(section) >= 2:
+                    heading, body = section[0], section[1]
+                else:
+                    continue
+                section_html += f'<div class="mini">{e(heading)}</div><p>{e(body)}</p>'
+        if not section_html:
+            section_html = f'<div class="mini">{e(item.get("analysis_heading"))}</div><p>{e(item.get("analysis"))}</p>'
+            if item.get("implication"):
+                section_html += f'<div class="mini">? cowork ???????</div><p>{e(item.get("implication"))}</p>'
         cards.append(
-            f"""<article class="card"><span class="tag">{e(item.get("tag"))}</span><h2>{e(item.get("title"))}</h2><div class="source">{e(item.get("date"))} · {e(item.get("source"))} · <a href="{e(item.get("url"))}" target="_blank" rel="noopener">点击查看原文 →</a></div><p>{e(item.get("fact"))}</p><div class="mini">{e(item.get("analysis_heading"))}</div><p>{e(item.get("analysis"))}</p><div class="lens"><b>对 buddy/cowork 产品的启示：</b>{e(item.get("implication"))}</div><div class="take"><b>简评：</b>{e(item.get("commentary"))}</div></article>"""
+            f"""<article class="card"><span class="tag">{e(item.get("tag"))}</span><h2>{e(item.get("title"))}</h2><div class="source">{e(item.get("date"))} ? {e(item.get("source"))} ? <a href="{e(item.get("url"))}" target="_blank" rel="noopener">?????? ?</a></div><p>{e(item.get("fact"))}</p>{section_html}<div class="take"><b>???</b>{e(item.get("commentary"))}</div></article>"""
         )
     signals = "".join(f"<p><b>{idx}. </b>{e(signal)}</p>" for idx, signal in enumerate(report.get("signals", []), start=1))
     return f"""<!doctype html>

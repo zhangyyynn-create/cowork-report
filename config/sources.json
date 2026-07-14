@@ -2,33 +2,40 @@
   "timezone": "Asia/Shanghai",
   "schedule_note": "Every Monday 09:30 China time. GitHub Actions cron uses UTC: 01:30 every Monday.",
   "focus": [
-    "AI cowork / buddy / copilot products, excluding WorkBuddy self-updates unless materially relevant",
-    "enterprise AI agents",
-    "office workflow agents",
+    "AI cowork / buddy / AI 同事 / Agentic workspace products, excluding WorkBuddy self-updates unless materially relevant",
+    "enterprise AI agents and office workflow agents",
     "coding agents and developer cowork tools",
-    "financial AI agents and investment workflow tools",
-    "ByteDance, Alibaba, DingTalk, Feishu and other China workflow entrants"
+    "financial, research, data-analysis and productivity workflow agents",
+    "China-facing competitors: ByteDance Trae Work/Trae IDE, Alibaba Qoder/DingTalk/Tongyi/Qwen, Kimi Work/Kimi Code/Kimi Claw/Moonshot, Arkclaw/OpenClaw/Manus"
   ],
   "queries": [
     {
       "name": "AI cowork and enterprise agents",
-      "query": "(AI agent OR AI copilot OR AI assistant OR cowork OR buddy) enterprise workflow product launch -WorkBuddy"
+      "query": "(\"AI cowork\" OR \"AI buddy\" OR \"AI coworker\" OR \"AI colleague\" OR \"agentic workspace\" OR \"enterprise agent\") product launch update"
+    },
+    {
+      "name": "China cowork products",
+      "query": "(\"Trae Work\" OR \"Trae IDE\" OR ByteDance OR 字节 OR 飞书 OR Lark OR DingTalk OR 钉钉) (AI agent OR AI assistant OR cowork OR buddy OR 工作台 OR AI同事)"
+    },
+    {
+      "name": "Alibaba and Qoder",
+      "query": "(Alibaba OR 阿里 OR Qoder OR Qwen OR 通义 OR 钉钉) (AI coding agent OR Claude Code OR AI agent OR cowork OR 工作流)"
+    },
+    {
+      "name": "Kimi agent products",
+      "query": "(Kimi Work OR Kimi Code OR Kimi Claw OR Moonshot OR 月之暗面) (agent OR Agent Swarm OR productivity OR coding OR cowork)"
+    },
+    {
+      "name": "developer cowork agents",
+      "query": "(Claude Code OR Codex OR Cursor OR Qoder OR Trae IDE OR Kimi Code OR coding agent) (enterprise OR product update OR launch OR security)"
     },
     {
       "name": "office and collaboration agents",
-      "query": "(Microsoft Copilot OR Google Gemini OR Slack AI OR Notion AI OR DingTalk OR Feishu) agent workflow office"
+      "query": "(ChatGPT Work OR Claude Cowork OR Microsoft Copilot OR Google Gemini OR Slack AI OR Notion AI) (agent OR workflow OR workspace OR connector)"
     },
     {
-      "name": "coding agents",
-      "query": "(Cursor OR Claude Code OR GitHub Copilot OR coding agent) product update enterprise"
-    },
-    {
-      "name": "financial AI agents",
-      "query": "(AI agent OR copilot) finance investment banking wealth management product"
-    },
-    {
-      "name": "China AI cowork products",
-      "query": "(ByteDance OR Alibaba OR DingTalk OR Feishu OR Tencent) AI agent assistant cowork buddy"
+      "name": "financial and research agents",
+      "query": "(AI agent OR copilot OR cowork) (finance OR investment OR research OR data analysis OR wealth management) product"
     }
   ],
   "must_track_companies": [
@@ -36,6 +43,9 @@
     "Alibaba",
     "DingTalk",
     "Feishu",
+    "Moonshot AI",
+    "Kimi",
+    "Qoder",
     "OpenAI",
     "Anthropic",
     "Google",
@@ -46,5 +56,23 @@
     "Salesforce",
     "Tencent",
     "Baidu"
+  ],
+  "must_track_products": [
+    "Trae Work",
+    "Trae IDE",
+    "Qoder",
+    "DingTalk AI",
+    "Tongyi/Qwen",
+    "Kimi Work",
+    "Kimi Code",
+    "Kimi Claw",
+    "Arkclaw",
+    "OpenClaw",
+    "Manus",
+    "ChatGPT Work",
+    "Claude Cowork",
+    "Claude Code",
+    "Codex",
+    "Microsoft Copilot"
   ]
 }

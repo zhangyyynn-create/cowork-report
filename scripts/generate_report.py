@@ -188,37 +188,44 @@ def call_deepseek(config: dict, sources: list[dict], start: dt.date, end: dt.dat
 你是给公司同事阅读的 AI cowork / buddy 产品周报作者。基于下面来源生成中文深度周报。
 
 观察周期：{start.isoformat()} 至 {end.isoformat()}
-关注范围：AI cowork、buddy、copilot、企业 Agent、办公/研发/金融工作流 Agent；重点关注字节、阿里、钉钉、飞书将要面对的产品竞争，但不要只写这几家公司。
 
-???
-1. ???????????????????/??/????/??/????????????????
-2. ???????????????????????? 2-3 ??????????????????????????????
-3. ??????????????????????????????????/?????????????????????
-4. ?????????????????/??/??/????????????????????????????????
-5. ????? sources???????????????????????????????
-6. ? 4-7 ????????????????????????????????????????
-7. ???? JSON??? Markdown ????
+选题边界：
+- 只写观察周期内可回溯的公开信息。旧新闻、旧产品页、百科、论坛讨论只能作为背景，不得写成“本周发生”。
+- 主题必须围绕 AI cowork / buddy / AI 同事 / Agentic workspace / 企业 Agent / 研发 Agent / 办公协作 Agent / 金融与数据分析工作流 Agent。
+- 必须优先检索和判断国内外代表产品：字节 Trae Work / Trae IDE，阿里 Qoder / 通义 / 钉钉 AI，Kimi Work / Kimi Code / Kimi Claw / Moonshot，Qoder，Arkclaw / OpenClaw / Manus，以及 OpenAI、Anthropic、Google、Microsoft、Cursor、Slack、Notion、Salesforce 等。
+- 如果某个重点产品本周没有权威来源，不要硬写，也不要在正文解释“为什么没写”。但只要有权威来源，就不要漏掉 Kimi、Qoder、Trae、阿里、字节等国内相关信号。
+- 不要让单一公司占满全文。除非来源不足，同一家公司最多 2 张卡片。
+
+写作要求：
+1. 产出是正式对外可读的研究型周报，不要出现“草稿、修订版、降重、内部要求、按用户要求修改”等过程话。
+2. 每张产品卡必须先讲清事实，再给 2-3 个分析小标题，最后给一段有判断力的“简评”。
+3. 分析要回答：这件事对 cowork 产品形态、入口、连接器、跨应用执行、权限审计、任务持续性、商业化或组织采用意味着什么。
+4. 不要泛泛罗列模型新闻；只有当模型变化影响 Agent 工作流成本、能力边界或产品入口时才写。
+5. 来源必须可点击，优先官方公告、产品页、权威媒体、研究论文。不要编造链接、日期或来源。
+6. 保留 4-7 张高质量卡片；宁可少而深，不要凑数。
+7. 只输出 JSON，不要 Markdown。
 
 JSON schema:
 {{
   "title": "AI cowork 产品周报｜YYYY-MM-DD 至 YYYY-MM-DD",
   "date": "{end.isoformat()}",
   "period": "YYYY-MM-DD 至 YYYY-MM-DD",
-  "summary": "一句话说明本期主线",
+  "summary": "一句话说明本期最重要判断",
   "lead": ["导读段落1", "导读段落2", "导读段落3"],
   "items": [
     {{
       "tag": "分类标签",
       "title": "产品动向标题",
-      "date": "YYYY-MM-DD 或 YYYY-MM",
-      "source": "媒体或官方来源",
-      "url": "原文链接",
-      "fact": "?????150-220???????????",
+      "date": "YYYY-MM-DD",
+      "source": "主来源名称",
+      "url": "主来源链接",
+      "source_links": [{{"name": "来源名称", "url": "来源链接"}}],
+      "fact": "150-240字，具体说明发生了什么、涉及什么产品或能力、来源怎么说",
       "detail_sections": [
-        {"heading": "??????1", "body": "80-160????????????"},
-        {"heading": "??????2", "body": "80-160??????????????"}
+        {{"heading": "分析小标题1", "body": "90-180字，讲清产品意义"}},
+        {{"heading": "分析小标题2", "body": "90-180字，讲清对 cowork/buddy 的影响"}}
       ],
-      "commentary": "???180-280???????????? cowork/buddy ???????"
+      "commentary": "180-300字，明确给出判断、可借鉴点和风险限制"
     }}
   ],
   "signals": ["关键判断1", "关键判断2", "关键判断3", "关键判断4", "关键判断5"]
@@ -259,7 +266,7 @@ def render_report(report: dict) -> str:
         if isinstance(detail_sections, list):
             for section in detail_sections[:3]:
                 if isinstance(section, dict):
-                    heading = section.get("heading") or section.get("title") or "????"
+                    heading = section.get("heading") or section.get("title") or "关键观察"
                     body = section.get("body") or section.get("analysis") or ""
                 elif isinstance(section, (list, tuple)) and len(section) >= 2:
                     heading, body = section[0], section[1]
@@ -269,9 +276,18 @@ def render_report(report: dict) -> str:
         if not section_html:
             section_html = f'<div class="mini">{e(item.get("analysis_heading"))}</div><p>{e(item.get("analysis"))}</p>'
             if item.get("implication"):
-                section_html += f'<div class="mini">? cowork ???????</div><p>{e(item.get("implication"))}</p>'
+                section_html += f'<div class="mini">对 cowork 产品的启发</div><p>{e(item.get("implication"))}</p>'
+        links = item.get("source_links") or []
+        if isinstance(links, list) and links:
+            source_html = " / ".join(
+                f'<a href="{e(link.get("url"))}" target="_blank" rel="noopener">{e(link.get("name") or "原文")}</a>'
+                for link in links
+                if isinstance(link, dict) and link.get("url")
+            )
+        else:
+            source_html = f'<a href="{e(item.get("url"))}" target="_blank" rel="noopener">点击查看原文 →</a>'
         cards.append(
-            f"""<article class="card"><span class="tag">{e(item.get("tag"))}</span><h2>{e(item.get("title"))}</h2><div class="source">{e(item.get("date"))} ? {e(item.get("source"))} ? <a href="{e(item.get("url"))}" target="_blank" rel="noopener">?????? ?</a></div><p>{e(item.get("fact"))}</p>{section_html}<div class="take"><b>???</b>{e(item.get("commentary"))}</div></article>"""
+            f"""<article class="card"><span class="tag">{e(item.get("tag"))}</span><h2>{e(item.get("title"))}</h2><div class="source">{e(item.get("date"))} · {e(item.get("source"))} · {source_html}</div><p>{e(item.get("fact"))}</p>{section_html}<div class="take"><b>简评：</b>{e(item.get("commentary"))}</div></article>"""
         )
     signals = "".join(f"<p><b>{idx}. </b>{e(signal)}</p>" for idx, signal in enumerate(report.get("signals", []), start=1))
     return f"""<!doctype html>
@@ -283,7 +299,7 @@ def render_report(report: dict) -> str:
 <style>{REPORT_STYLE}</style>
 </head>
 <body><div style="position:sticky;top:0;z-index:9999;background:#fff7dc;border-bottom:1px solid #ead8a8;padding:10px 18px;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif"><a href="../index.html" style="color:#7a4f00;font-weight:800;text-decoration:none">← 返回全部周报</a><span style="margin-left:14px;color:#667085;font-size:14px">{e(report.get("title"))}</span></div>
-<header class="hero"><div class="wrap"><span class="kicker">AI COWORK TRACKER</span><h1>cowork报告</h1><div class="meta">{e(report.get("period"))} · 正式发布</div></div></header>
+<header class="hero"><div class="wrap"><span class="kicker">AI COWORK TRACKER</span><h1>{e(report.get("title"))}</h1><div class="meta">{e(report.get("period"))} · 正式发布</div></div></header>
 <nav class="nav"><div class="wrap"><div class="chips"><a class="chip" href="#read">本期导读</a><a class="chip" href="#moves">产品动向</a><a class="chip" href="#signals">关键判断</a></div></div></nav>
 <main class="wrap">
 <section id="read"><h2 class="section-title">本期导读</h2><div class="lead">{p(report.get("lead", []))}</div></section>

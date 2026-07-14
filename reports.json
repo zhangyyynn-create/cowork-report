@@ -4,17 +4,17 @@
     "title": "AI cowork 产品周报｜2026-07-06 至 2026-07-12",
     "date": "2026-07-12",
     "path": "reports/2026-07-12.html",
-    "sources": 4,
+    "sources": 5,
     "type": "正式发布",
-    "summary": "本周最重要的变化是：AI cowork 开始从“会回答的聊天助手”转向“能接入工作上下文、跨端驻留并持续执行任务的工作层”。OpenAI 与 Anthropic 都在争夺默认工作入口，连接器、异步任务和权限治理成为核心分水岭。"
+    "summary": "本周最重要的信号不是某一家模型升级，而是 AI cowork 正在同时沿着“工作入口、研发替代、长任务并行、权限可信、成本可控”五条线竞争；Kimi 与 Qoder 的出现让国内竞品观察不再只是跟随 OpenAI/Anthropic。"
   },
   {
     "id": "2026-07-06",
     "title": "AI cowork 产品周报｜2026-06-30 至 2026-07-06",
     "date": "2026-07-06",
     "path": "reports/2026-07-06.html",
-    "sources": 3,
+    "sources": 4,
     "type": "正式发布",
-    "summary": "本周 AI cowork 的重点不在前台入口，而在底层可用性：Anthropic 用低成本 Agent 模型降低长流程执行门槛，用 Claude Science 展示垂直工作台路径；Microsoft 的组织采纳研究则提醒，AI 同事要落地，必须进入真实组织流程。"
+    "summary": "本周 AI cowork 的关键不是单点新功能，而是三类底层信号同时出现：阿里 Qoder 体现研发 Agent 的安全替代逻辑，Claude Science 展示垂直工作台路径，Sonnet 5 与 Microsoft 研究说明成本和组织采用正在决定 Agent 能否真正落地。"
   }
 ]

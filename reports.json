@@ -4,9 +4,9 @@
     "title": "AI cowork 产品周报｜2026-07-06 至 2026-07-12",
     "date": "2026-07-12",
     "path": "reports/2026-07-12.html",
-    "sources": 5,
+    "sources": 3,
     "type": "正式发布",
-    "summary": "本周 cowork 产品的主线是从“能回答”转向“能在多端、长任务、真实工具链里持续交付”：Claude Cowork 把异步任务推到移动端和网页，ChatGPT Work 把桌面工作入口与插件目录打包，Kimi 展现套件化 Agent 能力，Qoder 则被推到企业研发安全替代的讨论中心。"
+    "summary": "OpenAI 正式推出 ChatGPT Work，标志着通用型 AI cowork 产品进入巨头正面竞争阶段；Akeneo 发布 Agentic PXM 平台，展示垂直领域 Agent 工作流的落地路径。"
   },
   {
     "id": "2026-07-05",

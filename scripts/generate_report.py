@@ -129,6 +129,56 @@ def collect_sources(config: dict, start: dt.date, end: dt.date) -> list[dict]:
     return sources[:45]
 
 
+def compact_text(value: str, max_chars: int = 1200) -> str:
+    value = re.sub(r"<script[\s\S]*?</script>", " ", value, flags=re.I)
+    value = re.sub(r"<style[\s\S]*?</style>", " ", value, flags=re.I)
+    value = re.sub(r"<[^>]+>", " ", value)
+    value = html.unescape(value)
+    value = re.sub(r"\s+", " ", value).strip()
+    return value[:max_chars]
+
+
+def fetch_official_reference(source: dict) -> dict:
+    url = source["url"]
+    request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 cowork-report-bot"})
+    with urllib.request.urlopen(request, timeout=18) as response:
+        raw = response.read(900_000)
+        charset = response.headers.get_content_charset() or "utf-8"
+    text = raw.decode(charset, errors="replace")
+    title_match = re.search(r"<title[^>]*>(.*?)</title>", text, flags=re.I | re.S)
+    desc_match = re.search(
+        r"<meta[^>]+(?:name|property)=[\"'](?:description|og:description)[\"'][^>]+content=[\"'](.*?)[\"']",
+        text,
+        flags=re.I | re.S,
+    )
+    title = compact_text(title_match.group(1), 180) if title_match else source.get("name", "")
+    summary = compact_text(desc_match.group(1), 500) if desc_match else compact_text(text, 700)
+    return {
+        "name": source.get("name") or urllib.parse.urlparse(url).netloc,
+        "url": url,
+        "title": title,
+        "summary": summary,
+        "notes": source.get("notes", ""),
+        "reference_only": True,
+    }
+
+
+def collect_official_references(config: dict) -> list[dict]:
+    references: list[dict] = []
+    for source in config.get("official_sources", [])[:16]:
+        try:
+            references.append(fetch_official_reference(source))
+        except Exception as exc:
+            references.append({
+                "name": source.get("name"),
+                "url": source.get("url"),
+                "notes": source.get("notes", ""),
+                "fetch_error": str(exc),
+                "reference_only": True,
+            })
+    return references
+
+
 def extract_json(text: str) -> str:
     text = text.strip()
     if text.startswith("```"):
@@ -179,34 +229,45 @@ def fixture_report(sources: list[dict], start: dt.date, end: dt.date) -> dict:
     }
 
 
-def call_deepseek(config: dict, sources: list[dict], start: dt.date, end: dt.date, dry_run: bool) -> dict:
+def call_deepseek(config: dict, sources: list[dict], official_references: list[dict], start: dt.date, end: dt.date, dry_run: bool) -> dict:
     if dry_run:
         return fixture_report(sources, start, end)
     api_key = os.environ.get("DEEPSEEK_API_KEY")
     if not api_key:
         raise RuntimeError("Missing GitHub Secret: DEEPSEEK_API_KEY")
     framework = json.loads(FRAMEWORK.read_text(encoding="utf-8")) if FRAMEWORK.exists() else {}
+    official_references = official_references or []
     prompt = f"""
-你是给公司同事阅读的 AI cowork / buddy 产品周报作者。基于下面来源生成中文深度周报。
+你是给公司同事阅读的 AI cowork / buddy 产品周报作者。你的任务不是复述新闻，而是把上一整周 AI cowork / AI buddy / AI 同事 / Agentic workspace 类产品的新动向，整理成可对外阅读的研究型周报。
 
 观察周期：{start.isoformat()} 至 {end.isoformat()}
 
-选题边界：
-- 只写观察周期内可回溯的公开信息。旧新闻、旧产品页、百科、论坛讨论只能作为背景，不得写成“本周发生”。
-- 主题必须围绕 AI cowork / buddy / AI 同事 / Agentic workspace / 企业 Agent / 研发 Agent / 办公协作 Agent / 金融与数据分析工作流 Agent。
-- 必须优先检索和判断国内外代表产品：字节 Trae Work / Trae IDE，阿里 Qoder / 通义 / 钉钉 AI，Kimi Work / Kimi Code / Kimi Claw / Moonshot，Qoder，Arkclaw / OpenClaw / Manus，以及 OpenAI、Anthropic、Google、Microsoft、Cursor、Slack、Notion、Salesforce 等。
-- 如果某个重点产品本周没有权威来源，不要硬写，也不要在正文解释“为什么没写”。但只要有权威来源，就不要漏掉 Kimi、Qoder、Trae、阿里、字节等国内相关信号。
-- 不要让单一公司占满全文。除非来源不足，同一家公司最多 2 张卡片。
-- 必须先按 analysis_framework 判断每条信息落在哪些能力维度，再写结论；重点不是报道本身，而是能力变化对 cowork 产品形态的影响。
+硬性时间范围：
+- 只允许把观察周期内发布、更新或被权威报道的新信息写成“本周动向”。如果生成日是周一，观察周期就是上一个周一 00:00 到周日 23:59。
+- 旧官网、旧评测、百科、论坛讨论、历史实测和长期背景只能用来理解产品，不得写成“本周发生”。
+- 如果某条信息无法确认发布时间在观察周期内，或只有旧内容支撑，就不要进入产品动向卡片。
+
+追踪范围：
+- 重点是国内外主要 cowork / buddy / AI 同事 / Agentic workspace / 企业 Agent / 办公协作 Agent / 研发 Agent / 数据分析与金融工作流 Agent。太小、无公开可信来源、与“AI 持续帮人完成工作”无关的产品不用凑数。
+- 必须主动检查代表性产品池：字节 Trae Work / Trae IDE / 飞书与豆包相关 AI 同事，阿里 Qoder / 通义 / 钉钉 AI，Kimi Work / Kimi Code / Kimi Claw / Moonshot，Arkclaw / OpenClaw / Manus，以及 OpenAI、Anthropic、Google、Microsoft、Cursor、Slack、Notion、Salesforce、Perplexity 等。
+- 权重由“这一周谁有值得读者知道的新消息”决定，不按固定公司配额。没有可信新动向就不写，也不要在正文解释为什么没写。
+
+来源规则：
+- 优先使用官方公告、官网新闻、产品页、changelog、帮助文档，其次使用权威媒体、研究论文、融资新闻稿。
+- official_reference_sources 只用于核对产品定位、能力边界和术语；除非它自身有观察周期内明确日期，否则不能单独成为“本周新动向”。
+- 不要只凭一篇报道就武断下结论。单一媒体源只能写成弱信号或观察项；要上升到产品判断，尽量结合官方页面、另一家权威媒体、研究/历史上下文或产品能力证据。
+
+分析方法：
+- 原调研报告抽象出的 analysis_framework 只作为后台判断框架，不要在正文写“调研报告”“实测维度”“修订版”“降重”等过程话。
+- 每条卡片先讲清事实，再回答它落在哪些 cowork 能力维度：入口形态、跨应用执行、企业知识/文件/IM/邮件接入、异步调度、来源溯源、权限审计、任务复用、成本与商业化、稳定交付。
+- 报告要像正式公众号文章/研究周报：清晰、具体、有判断。不要泛泛罗列模型新闻；只有当模型变化影响 Agent 工作流成本、能力边界或产品入口时才写。
 
 写作要求：
-1. 产出是正式对外可读的研究型周报，不要出现“草稿、修订版、降重、内部要求、按用户要求修改”等过程话。
+1. 产出是正式对外可读的研究型周报，不要出现“草稿、修订版、降重、内部要求、按用户要求修改、WorkBuddy 自身改进”等过程话。
 2. 每张产品卡必须先讲清事实，再给 2-3 个分析小标题，至少包含“证据拼图/多源验证”“能力维度影响”“对 cowork 产品的启发”中的两个，最后给一段有判断力的“简评”。
-3. 分析要回答：这件事对 cowork 产品形态、入口、连接器、跨应用执行、权限审计、任务持续性、商业化或组织采用意味着什么。
-4. 不要泛泛罗列模型新闻；只有当模型变化影响 Agent 工作流成本、能力边界或产品入口时才写。
-5. 来源必须可点击，优先官方公告、产品页、权威媒体、研究论文。不要编造链接、日期或来源。不要只凭一篇新闻武断下结论：如果只有单一来源，必须写成弱信号或观察项；若无法交叉验证，就不要上升成行业判断。
-6. 保留 4-7 张高质量卡片；宁可少而深，不要凑数。
-7. 只输出 JSON，不要 Markdown。
+3. 保留 4-7 张高质量卡片；宁可少而深，不要凑数。
+4. 来源必须可点击，不要编造链接、日期或来源。
+5. 只输出 JSON，不要 Markdown。
 
 JSON schema:
 {{
@@ -236,6 +297,9 @@ JSON schema:
 
 analysis_framework_from_prior_cowork_research:
 {json.dumps(framework, ensure_ascii=False, indent=2)}
+
+official_reference_sources_for_positioning_only:
+{json.dumps(official_references, ensure_ascii=False, indent=2)}
 
 sources_already_strictly_filtered_to_period:
 {json.dumps(sources, ensure_ascii=False, indent=2)}
@@ -394,9 +458,10 @@ def main() -> None:
     config = json.loads(CONFIG.read_text(encoding="utf-8"))
     start, end = period(config, parsed)
     sources = collect_sources(config, start, end)
+    official_references = collect_official_references(config)
     if not sources and not parsed.dry_run:
         raise RuntimeError("No sources collected. Adjust config/sources.json or run again later.")
-    report = call_deepseek(config, sources, start, end, parsed.dry_run)
+    report = call_deepseek(config, sources, official_references, start, end, parsed.dry_run)
     write_outputs(report)
     print(f"generated report {report['date']} with {len(report.get('items', []))} items")
 

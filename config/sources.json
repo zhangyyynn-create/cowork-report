@@ -74,5 +74,57 @@
     "Claude Code",
     "Codex",
     "Microsoft Copilot"
+  ],
+  "official_sources": [
+    {
+      "name": "Kimi official",
+      "url": "https://www.kimi.com/",
+      "notes": "Kimi Work / Kimi Code / Kimi Claw product surface; use as capability reference, not weekly news unless dated elsewhere."
+    },
+    {
+      "name": "Trae official",
+      "url": "https://www.trae.ai/",
+      "notes": "ByteDance Trae Work and Trae IDE product surface."
+    },
+    {
+      "name": "Qoder official",
+      "url": "https://qoder.com/",
+      "notes": "QoderWork, QoderWake, Cloud Agents, CLI and changelog links; use for product capability verification."
+    },
+    {
+      "name": "OpenAI News",
+      "url": "https://openai.com/news/",
+      "notes": "Official OpenAI product and model announcements."
+    },
+    {
+      "name": "Anthropic News",
+      "url": "https://www.anthropic.com/news",
+      "notes": "Official Anthropic product, model, and Claude agent announcements."
+    },
+    {
+      "name": "Google Workspace Updates",
+      "url": "https://workspaceupdates.googleblog.com/",
+      "notes": "Official Google Workspace product updates, including Gemini workflow changes."
+    },
+    {
+      "name": "Microsoft 365 Blog",
+      "url": "https://www.microsoft.com/en-us/microsoft-365/blog/",
+      "notes": "Official Microsoft 365 Copilot and workplace AI product updates."
+    },
+    {
+      "name": "Cursor changelog",
+      "url": "https://www.cursor.com/changelog",
+      "notes": "Official Cursor product updates."
+    },
+    {
+      "name": "Notion releases",
+      "url": "https://www.notion.com/releases",
+      "notes": "Official Notion product releases."
+    },
+    {
+      "name": "Slack blog",
+      "url": "https://slack.com/blog",
+      "notes": "Official Slack AI and workplace agent product posts."
+    }
   ]
 }

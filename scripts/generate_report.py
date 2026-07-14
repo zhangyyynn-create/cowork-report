@@ -163,9 +163,9 @@ def fixture_report(sources: list[dict], start: dt.date, end: dt.date) -> dict:
         "period": f"{start.isoformat()} 至 {end.isoformat()}",
         "summary": "本期关注 AI cowork 从助手功能走向真实工作流的产品竞争。",
         "lead": [
-            "本期用于验证自动抓取、生成草稿 PR、人工确认后发布到 GitHub Pages 的完整链路。",
-            "正式运行时，系统会抓取公开新闻和官方来源，再由 DeepSeek 生成更完整的产品分析。",
-            "报告重点会放在 cowork/buddy 产品的入口、数据、动作权限、治理和企业落地上。",
+            "æ¬æå³æ³¨ AI cowork / buddy äº§åä»åç¹å©æèµ°åæç»­å·¥ä½æµçååï¼éç¹çå¥å£ãä¸ä¸æãè·¨åºç¨æ§è¡åä¼ä¸æ²»çè½åã",
+            "å¬å¼ä¿¡æ¯ä¼è¢«æ´çä¸ºé¢åè¯»èçäº§åå¨æ¥ï¼åè®²æ¸åçäºä»ä¹ï¼åå¤æ­å®å¯¹ cowork äº§åå½¢æåç«äºæ ¼å±æå³çä»ä¹ã",
+            "æ¥åéç¹æ¾å¨å¤é¨ AI coworkãä¼ä¸ Agentãç å Agent ååå¬åä½ Agent çäº§åååä¸ï¼ä¸æä»»ä½åä¸åé¨åç§äº§åä½ä¸ºä¸»çº¿ã",
         ],
         "items": items,
         "signals": [
@@ -265,7 +265,7 @@ def render_report(report: dict) -> str:
 <style>{REPORT_STYLE}</style>
 </head>
 <body><div style="position:sticky;top:0;z-index:9999;background:#fff7dc;border-bottom:1px solid #ead8a8;padding:10px 18px;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif"><a href="../index.html" style="color:#7a4f00;font-weight:800;text-decoration:none">← 返回全部周报</a><span style="margin-left:14px;color:#667085;font-size:14px">{e(report.get("title"))}</span></div>
-<header class="hero"><div class="wrap"><span class="kicker">AI COWORK TRACKER</span><h1>cowork报告</h1><div class="meta">{e(report.get("period"))} · 自动草稿</div></div></header>
+<header class="hero"><div class="wrap"><span class="kicker">AI COWORK TRACKER</span><h1>cowork报告</h1><div class="meta">{e(report.get("period"))} · 正式发布</div></div></header>
 <nav class="nav"><div class="wrap"><div class="chips"><a class="chip" href="#read">本期导读</a><a class="chip" href="#moves">产品动向</a><a class="chip" href="#signals">关键判断</a></div></div></nav>
 <main class="wrap">
 <section id="read"><h2 class="section-title">本期导读</h2><div class="lead">{p(report.get("lead", []))}</div></section>
@@ -324,7 +324,7 @@ def write_outputs(report: dict) -> None:
             "date": report["date"],
             "path": f"reports/{report_id}.html",
             "sources": len(report.get("items", [])),
-            "type": "自动草稿",
+            "type": "正式发布",
             "summary": report.get("summary", ""),
         }
     )

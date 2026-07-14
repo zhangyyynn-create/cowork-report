@@ -2,7 +2,7 @@
   "timezone": "Asia/Shanghai",
   "schedule_note": "Every Monday 09:30 China time. GitHub Actions cron uses UTC: 01:30 every Monday.",
   "focus": [
-    "AI cowork / buddy / AI 同事 / Agentic workspace products, excluding WorkBuddy self-updates unless materially relevant",
+    "AI cowork / buddy / AI 同事 / Agentic workspace products, excluding self-product updates unless materially relevant",
     "enterprise AI agents and office workflow agents",
     "coding agents and developer cowork tools",
     "financial, research, data-analysis and productivity workflow agents",

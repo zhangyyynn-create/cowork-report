@@ -21,6 +21,7 @@ from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "config" / "sources.json"
+FRAMEWORK = ROOT / "config" / "evaluation_framework.json"
 REPORTS = ROOT / "reports"
 REPORTS_JSON = ROOT / "reports.json"
 INDEX = ROOT / "index.html"
@@ -184,6 +185,7 @@ def call_deepseek(config: dict, sources: list[dict], start: dt.date, end: dt.dat
     api_key = os.environ.get("DEEPSEEK_API_KEY")
     if not api_key:
         raise RuntimeError("Missing GitHub Secret: DEEPSEEK_API_KEY")
+    framework = json.loads(FRAMEWORK.read_text(encoding="utf-8")) if FRAMEWORK.exists() else {}
     prompt = f"""
 你是给公司同事阅读的 AI cowork / buddy 产品周报作者。基于下面来源生成中文深度周报。
 
@@ -195,13 +197,14 @@ def call_deepseek(config: dict, sources: list[dict], start: dt.date, end: dt.dat
 - 必须优先检索和判断国内外代表产品：字节 Trae Work / Trae IDE，阿里 Qoder / 通义 / 钉钉 AI，Kimi Work / Kimi Code / Kimi Claw / Moonshot，Qoder，Arkclaw / OpenClaw / Manus，以及 OpenAI、Anthropic、Google、Microsoft、Cursor、Slack、Notion、Salesforce 等。
 - 如果某个重点产品本周没有权威来源，不要硬写，也不要在正文解释“为什么没写”。但只要有权威来源，就不要漏掉 Kimi、Qoder、Trae、阿里、字节等国内相关信号。
 - 不要让单一公司占满全文。除非来源不足，同一家公司最多 2 张卡片。
+- 必须先按 analysis_framework 判断每条信息落在哪些能力维度，再写结论；重点不是报道本身，而是能力变化对 cowork 产品形态的影响。
 
 写作要求：
 1. 产出是正式对外可读的研究型周报，不要出现“草稿、修订版、降重、内部要求、按用户要求修改”等过程话。
-2. 每张产品卡必须先讲清事实，再给 2-3 个分析小标题，最后给一段有判断力的“简评”。
+2. 每张产品卡必须先讲清事实，再给 2-3 个分析小标题，至少包含“证据拼图/多源验证”“能力维度影响”“对 cowork 产品的启发”中的两个，最后给一段有判断力的“简评”。
 3. 分析要回答：这件事对 cowork 产品形态、入口、连接器、跨应用执行、权限审计、任务持续性、商业化或组织采用意味着什么。
 4. 不要泛泛罗列模型新闻；只有当模型变化影响 Agent 工作流成本、能力边界或产品入口时才写。
-5. 来源必须可点击，优先官方公告、产品页、权威媒体、研究论文。不要编造链接、日期或来源。
+5. 来源必须可点击，优先官方公告、产品页、权威媒体、研究论文。不要编造链接、日期或来源。不要只凭一篇新闻武断下结论：如果只有单一来源，必须写成弱信号或观察项；若无法交叉验证，就不要上升成行业判断。
 6. 保留 4-7 张高质量卡片；宁可少而深，不要凑数。
 7. 只输出 JSON，不要 Markdown。
 
@@ -230,6 +233,9 @@ JSON schema:
   ],
   "signals": ["关键判断1", "关键判断2", "关键判断3", "关键判断4", "关键判断5"]
 }}
+
+analysis_framework_from_prior_cowork_research:
+{json.dumps(framework, ensure_ascii=False, indent=2)}
 
 sources_already_strictly_filtered_to_period:
 {json.dumps(sources, ensure_ascii=False, indent=2)}

@@ -4,20 +4,15 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: "测试模式：不调用 DeepSeek，只生成测试内容（正式生成保持 false）"
-        required: false
-        default: "false"
-      force:
-        description: "强制重新生成：本周已有草稿时才改成 true"
+        description: "Test mode: do not call DeepSeek; keep false for a real report draft."
         required: false
         default: "false"
       start:
-        description: "可选：手动指定开始日期，YYYY-MM-DD（通常留空）"
+        description: "Optional start date, YYYY-MM-DD. Leave empty for previous Monday."
         required: false
       end:
-        description: "可选：手动指定结束日期，YYYY-MM-DD（通常留空）"
+        description: "Optional end date, YYYY-MM-DD. Leave empty for previous Sunday."
         required: false
-
 
 concurrency:
   group: weekly-cowork-report
@@ -39,29 +34,7 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Check duplicate lock
-        id: gate
-        run: |
-          if [ "${{ inputs.force || 'false' }}" = "true" ]; then
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-            echo "Force mode enabled; duplicate lock check skipped."
-          else
-            report_date="$(python -c "import datetime as dt; now=dt.datetime.utcnow()+dt.timedelta(hours=8); monday=now.date()-dt.timedelta(days=now.date().weekday()); print((monday-dt.timedelta(days=1)).isoformat())")"
-            if [ -n "${{ inputs.end || '' }}" ]; then
-              report_date="${{ inputs.end }}"
-            fi
-            lock_branch="report-lock/${report_date}"
-            echo "report_date=${report_date}" >> "$GITHUB_OUTPUT"
-            if git ls-remote --exit-code --heads origin "$lock_branch" >/dev/null 2>&1; then
-              echo "skip=true" >> "$GITHUB_OUTPUT"
-              echo "Found ${lock_branch}; this run will skip to avoid duplicate review drafts."
-            else
-              echo "skip=false" >> "$GITHUB_OUTPUT"
-            fi
-          fi
-
       - name: Generate report draft
-        if: steps.gate.outputs.skip != 'true'
         env:
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
@@ -77,9 +50,16 @@ jobs:
           fi
           python scripts/generate_report.py "${args[@]}"
 
+      - name: Mark as a fresh review draft
+        run: |
+          report_date="$(cat .generated/report_date.txt)"
+          {
+            echo ""
+            echo "<!-- review_run_id: ${GITHUB_RUN_ID} -->"
+          } >> "reports/${report_date}.html"
+
       - name: Check changes
         id: changes
-        if: steps.gate.outputs.skip != 'true'
         run: |
           if git diff --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
@@ -88,8 +68,8 @@ jobs:
             echo "report_date=$(cat .generated/report_date.txt)" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Create review pull request
-        if: steps.gate.outputs.skip != 'true' && steps.changes.outputs.changed == 'true'
+      - name: Create review pull request and send email
+        if: steps.changes.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           REPORT_DATE: ${{ steps.changes.outputs.report_date }}
@@ -119,24 +99,6 @@ jobs:
             --preview-url "${preview_url}" \
             --report-file "reports/${REPORT_DATE}.html"
 
-          lock_branch="report-lock/${REPORT_DATE}"
-          git switch --orphan "$lock_branch"
-          git rm -rf . >/dev/null 2>&1 || true
-          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
-          {
-            echo "report_date=${REPORT_DATE}"
-            echo "run_id=${GITHUB_RUN_ID}"
-            echo "pr_url=${pr_url}"
-            echo "created_at=$(date -u --iso-8601=seconds)"
-          } > report-lock.txt
-          git add report-lock.txt
-          git commit -m "Lock cowork report ${REPORT_DATE}"
-          git push origin "$lock_branch" || true
-
       - name: No changes
-        if: steps.gate.outputs.skip != 'true' && steps.changes.outputs.changed != 'true'
+        if: steps.changes.outputs.changed != 'true'
         run: echo "No report changes generated."
-
-      - name: Skipped duplicate run
-        if: steps.gate.outputs.skip == 'true'
-        run: echo "Skipped because this report date already has a lock."

@@ -238,7 +238,7 @@ def call_deepseek(config: dict, sources: list[dict], official_references: list[d
     framework = json.loads(FRAMEWORK.read_text(encoding="utf-8")) if FRAMEWORK.exists() else {}
     official_references = official_references or []
     prompt = f"""
-你是给公司同事阅读的 AI cowork / buddy 产品周报作者。你的任务不是复述新闻，而是把上一整周 AI cowork / AI buddy / AI 同事 / Agentic workspace 类产品的新动向，整理成可对外阅读的研究型周报。
+你是给公司同事阅读的 AI cowork / buddy 产品周报作者。请把自己当成一位非常优秀的 AI 产品经理：你的任务不是复述新闻，而是把上一整周 AI cowork / AI buddy / AI 同事 / Agentic workspace 类产品的新动向，整理成有深度、有广度、可对外阅读的产品分析周报。
 
 观察周期：{start.isoformat()} 至 {end.isoformat()}
 
@@ -260,11 +260,11 @@ def call_deepseek(config: dict, sources: list[dict], official_references: list[d
 分析方法：
 - 原调研报告抽象出的 analysis_framework 只作为后台判断框架，不要在正文写“调研报告”“实测维度”“修订版”“降重”等过程话。
 - 每条卡片先讲清事实，再回答它落在哪些 cowork 能力维度：入口形态、跨应用执行、企业知识/文件/IM/邮件接入、异步调度、来源溯源、权限审计、任务复用、成本与商业化、稳定交付。
-- 报告要像正式公众号文章/研究周报：清晰、具体、有判断。不要泛泛罗列模型新闻；只有当模型变化影响 Agent 工作流成本、能力边界或产品入口时才写。
+- 报告要像优秀 AI 产品经理写的正式产品分析周报：既要讲清事实，也要拆解产品动作、用户场景、能力边界、商业/组织影响、风险限制和后续观察点。不要泛泛罗列模型新闻；只有当模型变化影响 Agent 工作流成本、能力边界或产品入口时才写。
 
 写作要求：
-1. 产出是正式对外可读的研究型周报，不要出现“草稿、修订版、降重、内部要求、按用户要求修改、WorkBuddy 自身改进”等过程话；也不要在正文显式解释“本期只看某个时间段、官网只用于核对、单一传闻不写”等筛选方法，时间范围和来源规则只在后台遵守。
-2. 每张产品卡必须先讲清事实，再给 2-3 个分析小标题，至少包含“证据拼图/多源验证”“能力维度影响”“对 cowork 产品的启发”中的两个，最后给一段有判断力的“简评”。
+1. 产出是正式对外可读的研究型周报，不要出现“草稿、修订版、降重、内部要求、按用户要求修改、某个内部参照产品自身改进”等过程话；也不要在正文显式解释“本期只看某个时间段、官网只用于核对、单一传闻不写”等筛选方法，时间范围和来源规则只在后台遵守。
+2. 每张产品卡必须先讲清事实，再给 3-5 个产品经理视角的小标题。小标题不要写成机械的来源核验说明；优先使用更自然、更有分析味道的标题，例如“产品动作”“能力边界”“场景落点”“组织/商业影响”“风险与限制”“对 cowork 产品的启发”“下一步观察”。最后给一段有判断力的“PM 简评”。
 3. 不设固定少量卡片上限：如果本周有多条值得关注且来源可靠的新动向，可以写到 8-10 张，并覆盖不同公司和能力维度；如果没有更多高质量信息，宁可保持 4-6 张，不要凑数。
 4. 来源必须可点击，不要编造链接、日期或来源。
 5. 只输出 JSON，不要 Markdown。
@@ -284,12 +284,12 @@ JSON schema:
       "source": "主来源名称",
       "url": "主来源链接",
       "source_links": [{{"name": "来源名称", "url": "来源链接"}}],
-      "fact": "150-240字，具体说明发生了什么、涉及什么产品或能力、来源怎么说",
+      "fact": "180-320字，具体说明发生了什么、涉及什么产品或能力、为什么和 cowork/Agent 工作流有关。写给不了解背景的读者也能读懂",
       "detail_sections": [
-        {{"heading": "分析小标题1", "body": "90-180字，讲清产品意义"}},
-        {{"heading": "分析小标题2", "body": "90-180字，讲清对 cowork/buddy 的影响"}}
+        {{"heading": "产品动作 / 能力边界 / 场景落点 / 组织影响 / 风险限制 等自然小标题", "body": "120-240字，像产品经理一样讲清产品意义、用户价值、落地门槛或行业影响"}},
+        {{"heading": "产品动作 / 能力边界 / 场景落点 / 组织影响 / 风险限制 等自然小标题", "body": "120-240字，继续展开一个不同维度，避免空泛结论"}}
       ],
-      "commentary": "180-300字，明确给出判断、可借鉴点和风险限制"
+      "commentary": "220-420字，以 PM 简评口吻给出明确判断：这件事对 cowork 产品形态、用户采用、能力建设、竞争格局和风险边界意味着什么"
     }}
   ],
   "signals": ["关键判断1", "关键判断2", "关键判断3", "关键判断4", "关键判断5"]
@@ -334,7 +334,7 @@ def render_report(report: dict) -> str:
         detail_sections = item.get("detail_sections") or item.get("sections") or []
         section_html = ""
         if isinstance(detail_sections, list):
-            for section in detail_sections[:3]:
+            for section in detail_sections[:5]:
                 if isinstance(section, dict):
                     heading = section.get("heading") or section.get("title") or "关键观察"
                     body = section.get("body") or section.get("analysis") or ""
@@ -357,7 +357,7 @@ def render_report(report: dict) -> str:
         else:
             source_html = f'<a href="{e(item.get("url"))}" target="_blank" rel="noopener">点击查看原文 →</a>'
         cards.append(
-            f"""<article class="card"><span class="tag">{e(item.get("tag"))}</span><h2>{e(item.get("title"))}</h2><div class="source">{e(item.get("date"))} · {e(item.get("source"))} · {source_html}</div><p>{e(item.get("fact"))}</p>{section_html}<div class="take"><b>简评：</b>{e(item.get("commentary"))}</div></article>"""
+            f"""<article class="card"><span class="tag">{e(item.get("tag"))}</span><h2>{e(item.get("title"))}</h2><div class="source">{e(item.get("date"))} · {e(item.get("source"))} · {source_html}</div><p>{e(item.get("fact"))}</p>{section_html}<div class="take"><b>PM 简评：</b>{e(item.get("commentary"))}</div></article>"""
         )
     signals = "".join(f"<p><b>{idx}. </b>{e(signal)}</p>" for idx, signal in enumerate(report.get("signals", []), start=1))
     return f"""<!doctype html>

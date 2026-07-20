@@ -125,6 +125,26 @@
       "name": "Slack blog",
       "url": "https://slack.com/blog",
       "notes": "Official Slack AI and workplace agent product posts."
+    },
+    {
+      "name": "Kimi Code changelog",
+      "url": "https://www.kimi.com/code/docs/en/kimi-code/whats-new.html",
+      "notes": "Official dated Kimi Code updates. Use dated entries within the observation period as weekly product signals."
+    },
+    {
+      "name": "Qoder changelog",
+      "url": "https://qoder.com/en/changelog",
+      "notes": "Official dated Qoder product updates. Use dated entries within the observation period as weekly product signals."
+    },
+    {
+      "name": "ChatGPT release notes",
+      "url": "https://help.openai.com/en/articles/6825453-chatgpt-release-notes",
+      "notes": "Official dated ChatGPT product release notes. Use only entries within the observation period."
+    },
+    {
+      "name": "ChatGPT Agents app in Slack",
+      "url": "https://help.openai.com/en/articles/20001199-chatgpt-agents-app-in-slack",
+      "notes": "Official help document for Slack agents. Use dated updates when available, otherwise only for positioning."
     }
   ]
 }

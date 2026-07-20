@@ -153,11 +153,13 @@ def fetch_official_reference(source: dict) -> dict:
     )
     title = compact_text(title_match.group(1), 180) if title_match else source.get("name", "")
     summary = compact_text(desc_match.group(1), 500) if desc_match else compact_text(text, 700)
+    page_excerpt = compact_text(text, 2400)
     return {
         "name": source.get("name") or urllib.parse.urlparse(url).netloc,
         "url": url,
         "title": title,
         "summary": summary,
+        "page_excerpt": page_excerpt,
         "notes": source.get("notes", ""),
         "reference_only": True,
     }
@@ -298,7 +300,8 @@ JSON schema:
 analysis_framework_from_prior_cowork_research:
 {json.dumps(framework, ensure_ascii=False, indent=2)}
 
-official_reference_sources_for_positioning_only:
+official_pages_and_changelogs_for_date_check:
+Some official pages below are dated changelogs or release notes. Dated entries within the observation period may be used as weekly sources. Older undated product pages are positioning references only.
 {json.dumps(official_references, ensure_ascii=False, indent=2)}
 
 sources_already_strictly_filtered_to_period:
@@ -459,8 +462,10 @@ def main() -> None:
     start, end = period(config, parsed)
     sources = collect_sources(config, start, end)
     official_references = collect_official_references(config)
-    if not sources and not parsed.dry_run:
-        raise RuntimeError("No sources collected. Adjust config/sources.json or run again later.")
+    if not sources and not official_references and not parsed.dry_run:
+        raise RuntimeError("No sources collected and no official references fetched. Adjust config/sources.json or run again later.")
+    if not sources:
+        print("warning: no news RSS sources collected; continuing with official references only", file=sys.stderr)
     report = call_deepseek(config, sources, official_references, start, end, parsed.dry_run)
     write_outputs(report)
     print(f"generated report {report['date']} with {len(report.get('items', []))} items")

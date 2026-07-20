@@ -1,0 +1,69 @@
+﻿name: Send published cowork report email
+
+on:
+  workflow_dispatch:
+    inputs:
+      report_date:
+        description: "Report date to send, YYYY-MM-DD. Leave empty to send latest report."
+        required: false
+  push:
+    branches:
+      - main
+    paths:
+      - "reports/*.html"
+      - "reports.json"
+
+permissions:
+  contents: read
+
+jobs:
+  send:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Pick report
+        id: report
+        run: |
+          report_date="${{ github.event_name == 'workflow_dispatch' && inputs.report_date || '' }}"
+          if [ -z "$report_date" ]; then
+            report_date=$(python - <<'PY'
+import json
+with open('reports.json', encoding='utf-8-sig') as f:
+    reports = json.load(f)
+print(reports[0]['id'])
+PY
+)
+          fi
+          report_file="reports/${report_date}.html"
+          if [ ! -f "$report_file" ]; then
+            echo "Report file not found: $report_file" >&2
+            exit 1
+          fi
+          echo "report_date=$report_date" >> "$GITHUB_OUTPUT"
+          echo "report_file=$report_file" >> "$GITHUB_OUTPUT"
+          echo "report_url=https://zhangyyynn-create.github.io/cowork-report/reports/${report_date}.html" >> "$GITHUB_OUTPUT"
+          echo "archive_url=https://zhangyyynn-create.github.io/cowork-report/" >> "$GITHUB_OUTPUT"
+
+      - name: Send published email
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+          PUBLISH_MAIL_TO: ${{ secrets.PUBLISH_MAIL_TO }}
+          PUBLISH_MAIL_CC: ${{ secrets.PUBLISH_MAIL_CC }}
+          PUBLISH_MAIL_BCC: ${{ secrets.PUBLISH_MAIL_BCC }}
+        run: |
+          python scripts/send_published_email.py \
+            --report-date "${{ steps.report.outputs.report_date }}" \
+            --report-file "${{ steps.report.outputs.report_file }}" \
+            --report-url "${{ steps.report.outputs.report_url }}" \
+            --archive-url "${{ steps.report.outputs.archive_url }}"

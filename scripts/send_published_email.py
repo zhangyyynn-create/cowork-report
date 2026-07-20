@@ -1,26 +1,29 @@
 ﻿#!/usr/bin/env python3
-"""Send an SMTP notification for a report review pull request."""
+"""Send the published cowork report to a distribution mailbox/list."""
 
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import smtplib
-import urllib.request
 from email.message import EmailMessage
 from email.utils import formataddr
 from html import escape
+from pathlib import Path
+
+
+DEFAULT_ARCHIVE_URL = "https://zhangyyynn-create.github.io/cowork-report/"
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--pr-url", required=True)
+    parser.add_argument("--report-file", required=True)
     parser.add_argument("--report-date", required=True)
-    parser.add_argument("--site-url", default="https://zhangyyynn-create.github.io/cowork-report/")
-    parser.add_argument("--preview-url", default="")
-    parser.add_argument("--report-file", default="")
-    parser.add_argument("--report-raw-url", default="")
+    parser.add_argument("--report-url", required=True)
+    parser.add_argument("--archive-url", default=DEFAULT_ARCHIVE_URL)
+    parser.add_argument("--reports-json", default="reports.json")
     return parser.parse_args()
 
 
@@ -31,28 +34,31 @@ def require_env(name: str) -> str:
     return value
 
 
-def read_report_html(args: argparse.Namespace) -> str:
-    if args.report_file and os.path.exists(args.report_file):
-        with open(args.report_file, "r", encoding="utf-8") as file:
-            return file.read()
-    if args.report_raw_url:
-        request = urllib.request.Request(args.report_raw_url, headers={"User-Agent": "Mozilla/5.0 cowork-report-mailer"})
-        with urllib.request.urlopen(request, timeout=30) as response:
-            return response.read().decode("utf-8")
+def optional_env(*names: str) -> str:
+    for name in names:
+        value = os.environ.get(name, "").strip()
+        if value:
+            return value
     return ""
 
 
-def extract_title(report_html: str, fallback: str) -> str:
-    match = re.search(r"<title>(.*?)</title>", report_html, flags=re.S | re.I)
-    if not match:
-        return fallback
-    return re.sub(r"\s+", " ", match.group(1)).strip()
+def read_report_meta(args: argparse.Namespace, report_html: str) -> dict[str, str]:
+    meta = {"title": f"AI cowork 产品周报｜{args.report_date}", "summary": "本期 AI cowork 产品周报已发布。"}
+    reports_path = Path(args.reports_json)
+    if reports_path.exists():
+        reports = json.loads(reports_path.read_text(encoding="utf-8-sig"))
+        for item in reports:
+            if item.get("id") == args.report_date or item.get("date") == args.report_date:
+                meta["title"] = item.get("title") or meta["title"]
+                meta["summary"] = item.get("summary") or meta["summary"]
+                break
+    title_match = re.search(r"<title>(.*?)</title>", report_html, flags=re.S | re.I)
+    if title_match:
+        meta["title"] = re.sub(r"\s+", " ", title_match.group(1)).strip()
+    return meta
 
 
-def report_email_body(report_html: str) -> str:
-    if not report_html:
-        return '<p style="margin:0 0 14px">本期周报草稿已生成，请点击下方链接查看。</p>'
-
+def inline_report_body(report_html: str) -> str:
     match = re.search(r"<body[^>]*>(.*)</body>", report_html, re.S | re.I)
     body = match.group(1) if match else report_html
     body = re.sub(r"<script[\s\S]*?</script>", "", body, flags=re.I)
@@ -95,45 +101,47 @@ def send_smtp(message: EmailMessage, host: str, port: int, user: str, password: 
 
 def main() -> None:
     args = parse_args()
+    report_html = Path(args.report_file).read_text(encoding="utf-8")
+    meta = read_report_meta(args, report_html)
+
     smtp_host = os.environ.get("SMTP_HOST", "smtp.qq.com").strip() or "smtp.qq.com"
     smtp_port = int(os.environ.get("SMTP_PORT", "465").strip() or "465")
     smtp_user = require_env("SMTP_USER")
     smtp_password = require_env("SMTP_PASSWORD")
-    mail_to = os.environ.get("MAIL_TO", "").strip() or smtp_user
-    preview_url = args.preview_url or args.pr_url
-    report_html = read_report_html(args)
-    title = extract_title(report_html, f"cowork报告 {args.report_date}")
-    report_body = report_email_body(report_html)
+    mail_to = optional_env("PUBLISH_MAIL_TO", "MAIL_TO")
+    if not mail_to:
+        raise RuntimeError("Missing PUBLISH_MAIL_TO or MAIL_TO. Set a GitHub Secret for the published report recipients.")
+    mail_cc = optional_env("PUBLISH_MAIL_CC")
+    mail_bcc = optional_env("PUBLISH_MAIL_BCC")
 
-    subject = f"待确认发布：{title}"
-    text = f"""本期 cowork 报告草稿已生成，等待你确认发布。
+    subject = f"【AI cowork 产品周报】{args.report_date} 已发布"
+    text = f"""{meta['title']} 已发布。
 
-查看渲染后的草稿：
-{preview_url}
+本期摘要：
+{meta['summary']}
 
-确认发布：
-{args.pr_url}
+查看当期：
+{args.report_url}
 
-历史周报首页：
-{args.site_url}
-
-确认方式：打开确认发布链接，检查内容无误后点击 Merge pull request。合并后公开网站会自动更新。
+查看历史全部周报：
+{args.archive_url}
 """
+    body = inline_report_body(report_html)
     html = f"""\
 <!doctype html>
 <html lang="zh-CN">
 <body style="margin:0;background:#fffaf0;color:#1d2f42;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei',Arial,sans-serif;line-height:1.7">
   <div style="max-width:760px;margin:0 auto;padding:28px">
     <div style="background:#fff;border:1px solid #ead8a8;border-radius:8px;margin-bottom:18px;padding:22px 24px">
-      <p style="margin:0 0 14px">本期周报草稿已生成，下方可直接阅读渲染后的正文。</p>
-      <p style="margin:0 0 18px">确认无误后点击 <b>确认发布</b>，进入 GitHub 后选择 <b>Merge pull request</b>，公开网站会自动更新。</p>
+      <p style="margin:0 0 10px;color:#7a4f00;font-weight:800">AI cowork 产品周报已发布</p>
+      <h1 style="font-size:24px;line-height:1.35;margin:0 0 12px;color:#06456b">{escape(meta['title'])}</h1>
+      <p style="margin:0 0 16px">{escape(meta['summary'])}</p>
       <p style="margin:0">
-        <a href="{escape(preview_url)}" style="display:inline-block;background:#7a4f00;color:#fff;text-decoration:none;padding:10px 16px;border-radius:6px;font-weight:700;margin-right:8px">查看网页草稿</a>
-        <a href="{escape(args.pr_url)}" style="display:inline-block;background:#b77900;color:#fff;text-decoration:none;padding:10px 16px;border-radius:6px;font-weight:700;margin-right:8px">确认发布</a>
-        <a href="{escape(args.site_url)}" style="display:inline-block;background:#fff7dc;color:#7a4f00;text-decoration:none;padding:9px 15px;border-radius:6px;font-weight:700;border:1px solid #ead8a8">历史周报</a>
+        <a href="{escape(args.report_url)}" style="display:inline-block;background:#b77900;color:#fff;text-decoration:none;padding:10px 16px;border-radius:6px;font-weight:700;margin-right:8px">查看当期网页</a>
+        <a href="{escape(args.archive_url)}" style="display:inline-block;background:#fff7dc;color:#7a4f00;text-decoration:none;padding:9px 15px;border-radius:6px;font-weight:700;border:1px solid #ead8a8">查看历史全部</a>
       </p>
     </div>
-    {report_body}
+    {body}
   </div>
 </body>
 </html>
@@ -141,13 +149,17 @@ def main() -> None:
 
     message = EmailMessage()
     message["Subject"] = subject
-    message["From"] = formataddr(("cowork报告", smtp_user))
+    message["From"] = formataddr(("AI cowork 产品周报", smtp_user))
     message["To"] = mail_to
+    if mail_cc:
+        message["Cc"] = mail_cc
+    if mail_bcc:
+        message["Bcc"] = mail_bcc
     message.set_content(text)
     message.add_alternative(html, subtype="html")
 
     send_smtp(message, smtp_host, smtp_port, smtp_user, smtp_password)
-    print(f"sent review email to {mail_to}")
+    print(f"sent published email to {mail_to}")
 
 
 if __name__ == "__main__":

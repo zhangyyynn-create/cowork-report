@@ -14,9 +14,6 @@ on:
         description: "Optional end date, YYYY-MM-DD. Leave empty for previous Sunday."
         required: false
 
-concurrency:
-  group: weekly-cowork-report
-  cancel-in-progress: false
 
 permissions:
   contents: write
